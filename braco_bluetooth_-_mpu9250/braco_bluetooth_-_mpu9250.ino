@@ -2,7 +2,7 @@
  * 
  * Author: Igor Fachini com alterações;
  * 
- * Description: Movimentar servo motores utilizando bluetooth via app 
+ * Description: Movimentar servo motores utilizando a Serial ou bluetooth via app 
  *  (disponível em: https://github.com/WickedBotz/BrinquedoIOT_Free-A/blob/master/Apk/CAB-Controle%20Arduino%20Bluetooth_Free.apk)
  *  do protótipo do braço robótico feito de madeira;
  * 
@@ -21,16 +21,49 @@ SoftwareSerial serial1(11, 10); // RX, TX
 #define SERVO_C 6
 #define SERVO_D 7
 
+#define REDUTOR 2
+
 Servo servo_a, servo_b, servo_c, servo_d;
 
 String data = "0";
 int a = 15, b = 90, c = 90, d = 90, time_servo = 15;
 
-// MAPEAMENTO DIRECOES BRACO
-//A FRENTE tras - cervo esquerda  < pra tras > pra frente
-//b garra < abre > fecha
-//c cima baixo - cervo direita < pra frente > pra tras
-//d direita esquerda - cervo baixo < pra esquerda > pra direita
+/* MAPEAMENTO DIRECOES BRACO
+ * 2 - Seta para TRÁS - retrai o braco para tras (servo dir.);
+ * 4 - Seta para ESQUERDA - gira a base para esq.;
+ * 6 - Seta para DIREITA - gira a base para dir.;
+ * 8 - Seta para CIMA - estica o braco para frente (servo dir.);
+ * X - Eleva/ergue o braco (servo esq.);
+ * A - Baixa o braço (servo esq.);
+ * Y - Abre a garra;
+ * Z - Fecha a garra
+*/
+
+
+
+
+class leituras {
+  public:
+    int16_t *x, *y, *z;
+
+  leituras() {
+    x = y = z = 0;
+  }
+
+  leituras( int16_t X, int16_t Y, int16_t Z ) {
+    x = X;
+    y = Y;
+    z = Z;
+  }
+
+  leituras data() {
+    return leituras(*x, *y, *z);
+  }
+
+};
+
+
+leituras read;
 
 void setup()
 {
@@ -65,15 +98,18 @@ void setup()
   servo_d.write(d);
 }
 
+
 void loop()
 {
   // put your main code here, to run repeatedly:
-  app_arm_control();
+  //app_arm_control();
 
-  readGA();
+  ga_arm_control();
+
 }
 
-// Para controle manual, recebe a letra do servo e a posicao
+
+// Para controle manual (via Serial), recebe a letra do servo e a posicao
 // Ex: a20
 void manual_arm_control()
 {
@@ -162,6 +198,7 @@ void manual_arm_control()
   }
 }
 
+
 //Para ser controlodo pelo app
 void app_arm_control()
 {
@@ -177,6 +214,7 @@ void app_arm_control()
     {
       a++;
       servo_a.write(a);
+      Serial.println("Pressionado 8");
       delay(time_servo);
     }
 
@@ -186,6 +224,7 @@ void app_arm_control()
     {
       d++;
       servo_d.write(d);
+      Serial.println("Pressionado 4");
       delay(time_servo);
     }
 
@@ -195,6 +234,7 @@ void app_arm_control()
     {
       d--;
       servo_d.write(d);
+      Serial.println("Pressionado 6");
       delay(time_servo);
     }
 
@@ -204,6 +244,7 @@ void app_arm_control()
     {
       a--;
       servo_a.write(a);
+      Serial.println("Pressionado 2");
       delay(time_servo);
     }
 
@@ -213,6 +254,7 @@ void app_arm_control()
     {
       c++;
       servo_c.write(c);
+      Serial.println("Pressionado X");
       delay(time_servo);
     }
 
@@ -222,6 +264,7 @@ void app_arm_control()
     {
       c--;
       servo_c.write(c);
+      Serial.println("Pressionado A");
       delay(time_servo);
     }
 
@@ -232,6 +275,7 @@ void app_arm_control()
     {
       b--;
       servo_b.write(b);
+      Serial.println("Pressionado Y");
       delay(time_servo);
     }
 
@@ -241,9 +285,52 @@ void app_arm_control()
     {
       b++;
       servo_b.write(b);
+      Serial.println("Pressionado Z");
       delay(time_servo);
     }
 
     break;
   }
 }
+
+
+// Controle via giroscópio e acelerometro (mod. MPU 9250)
+void ga_arm_control() {
+  
+  int *x = readGA();
+
+  //Serial.print(*x);
+
+/*
+    if (*x > 148 && a < 120) {
+      for ( int i = a; a < ((*x / REDUTOR) / 148); x -= 148) {
+        a++;
+        servo_a.write(a);
+      }
+      
+      Serial.println(" - Frente");
+      delay(time_servo);
+    }
+    */
+
+    String text = " - Frente";
+    
+    if(*x < 0) {
+      text = " -      Trás";
+    }
+
+    *x = map(*x, -32768, 32768, 10, 120);
+
+    Serial.print(" - ");
+    Serial.print(*x);
+    Serial.println(text);
+
+    if (*x < 120 && *x > 20) {
+      servo_a.write(*x);
+    }
+
+      delay(time_servo);
+      //delay(800);
+  
+}
+

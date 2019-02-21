@@ -6,7 +6,6 @@
  * 
  */
 
-
 #include <Wire.h>
 
 
@@ -24,7 +23,6 @@
 
 
 const int iLED = 13;
-
 
 
   /* :: Funcoes basicas :: */
@@ -65,7 +63,7 @@ void I2CwriteByte(uint8_t Address, uint8_t Register, uint8_t Data) {
 
 
 // Read accelerometer and gyroscope
-void readGA() {
+int readGA() {
 
   uint8_t Buf[14];
   I2Cread(MPU9250_ADDRESS,0x3B,A4,Buf);
@@ -80,9 +78,9 @@ void readGA() {
   */
 
   // Gyroscope
-  int16_t gx = -(Buf[8]<<8 | Buf[9]);
-  int16_t gy = -(Buf[10]<<8 | Buf[11]);
-  int16_t gz = Buf[12]<<8 | Buf[13];
+  int16_t *gx = -(Buf[8]<<8 | Buf[9]);
+  int16_t *gy = -(Buf[10]<<8 | Buf[11]);
+  int16_t *gz = Buf[12]<<8 | Buf[13];
 
   
   
@@ -96,18 +94,22 @@ void readGA() {
   Serial.print (az,DEC);  
   Serial.print ("Az\t");
   */
+
   
   // Gyroscope
-  Serial.print (gx,DEC); 
+  Serial.print (*gx,DEC); 
   Serial.print ("Gx\t");
-  Serial.print (gy,DEC);
-  Serial.print ("Gy\t");
-  Serial.print (gz,DEC);  
-  Serial.print ("Gz\t");
+  /*
+  * Serial.print (*gy,DEC);
+  * Serial.print ("Gy\t");
+  * Serial.print (*gz,DEC);  
+  * Serial.print ("Gz\t");
+  */
   
   // End of line
-  Serial.println("");
-  delay(100);
-  
+//  Serial.println("");
+//  delay(100);
+
+  return &gx;
 }
 
